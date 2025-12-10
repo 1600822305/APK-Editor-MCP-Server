@@ -53,3 +53,9 @@ manifest_*/
 *.apk
 *.apks
 *.xapk
+
+# Java/Kotlin
+java-core/build/
+java-core/.gradle/
+java-core/.idea/
+*.class

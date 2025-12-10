@@ -40,7 +40,7 @@ pip install -e .
   "mcpServers": {
     "apk-editor": {
       "command": "python",
-      "args": ["K:/path/to/apk-editor-mcp-python/run_server.py"]
+      "args": ["K:/path/to/APK-Editor-MCP-Server/mcp-server/run_server.py"]
     }
   }
 }
@@ -155,19 +155,29 @@ fast_dex_decompile_package("com.example.app.*")
 ## 项目结构
 
 ```
-apk-editor-mcp-python/
-├── apk_editor_mcp/
-│   ├── server.py          # MCP 服务器主文件
-│   ├── fast_dex.py        # 快速 DEX 编辑器
-│   ├── apk_tools.py       # APK 操作工具
-│   ├── file_tools.py      # 文件操作
-│   ├── smali_tools.py     # Smali 操作
-│   └── search_tools.py    # 搜索工具
+APK-Editor-MCP-Server/
+├── mcp-server/           # Python MCP 服务器
+│   ├── apk_editor_mcp/
+│   │   ├── server.py     # MCP 服务器主文件
+│   │   ├── fast_dex.py   # 快速 DEX 编辑器
+│   │   ├── apk_editor.py # APK 操作工具
+│   │   ├── file_utils.py # 文件操作
+│   │   ├── smali_utils.py# Smali 操作
+│   │   └── search_utils.py # 搜索工具
+│   ├── run_server.py     # 启动脚本
+│   └── requirements.txt
+├── java-core/            # Kotlin/Java DEX 编辑核心
+│   ├── src/main/kotlin/
+│   │   └── com/apkeditor/dex/
+│   │       ├── DexEditor.kt  # DEX 编辑器核心
+│   │       └── Main.kt       # 命令行入口
+│   ├── build.gradle.kts
+│   └── build/libs/
+│       └── dex-editor.jar    # 编译产物
 ├── libs/
-│   ├── APKEditor.jar      # APK 编辑核心
-│   └── dex-editor.jar     # DEX 编辑器（内置 jadx-core）
-├── workspace/             # 工作目录
-├── run_server.py          # 启动脚本
+│   ├── APKEditor.jar     # APK 编辑核心
+│   ├── dex-editor.jar    # DEX 编辑器（内置 jadx-core）
+│   └── apksigner.jar     # APK 签名工具
 └── README.md
 ```
 
