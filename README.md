@@ -103,6 +103,19 @@ pip install -e .
 | `smali_gen_log` | 生成 Log.d 调用代码 |
 | `smali_gen_return` | 生成 return 语句代码 |
 
+### ADB 工具
+
+| 工具 | 说明 |
+|------|------|
+| `adb_list_devices` | **列出所有连接的设备** |
+| `adb_install` | **安装 APK 到设备** |
+| `adb_uninstall` | 卸载应用 |
+| `adb_logcat` | 获取设备日志 |
+| `adb_screenshot` | 截取设备屏幕 |
+| `adb_device_info` | 获取设备详细信息 |
+| `adb_list_packages` | 列出已安装的应用 |
+| `adb_clear_data` | 清除应用数据 |
+
 ### 搜索工具
 
 | 工具 | 说明 |
@@ -150,6 +163,30 @@ fast_dex_search_string("password")
 ```python
 # 反编译整个包
 fast_dex_decompile_package("com.example.app.*")
+```
+
+### 完整破解流程（含ADB测试）
+
+```python
+# 1. 打开APK
+fast_dex_open("app.apk")
+
+# 2. 修改VIP验证
+fast_dex_modify_class("Lcom/example/VipInfo;", new_smali_code)
+
+# 3. 保存并签名
+fast_dex_save("app_cracked.apk")
+apk_sign(apk_path="app_cracked.apk")
+
+# 4. 安装到设备测试
+adb_list_devices()  # 查看连接的设备
+adb_install(apk_path="app_cracked_signed.apk", replace=True)
+
+# 5. 查看运行日志
+adb_logcat(filter_tag="VipInfo", lines=50)
+
+# 6. 清除数据重新测试
+adb_clear_data(package_name="com.example.app")
 ```
 
 ## 项目结构

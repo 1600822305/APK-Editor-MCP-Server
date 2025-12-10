@@ -46,6 +46,16 @@ from .smali_utils import (
     generate_log_smali,
     generate_return_smali
 )
+from .adb_utils import (
+    list_devices,
+    install_apk,
+    uninstall_app,
+    get_logcat,
+    take_screenshot,
+    get_device_info,
+    list_installed_packages,
+    clear_app_data
+)
 from .fast_dex import (
     fast_dex_open,
     fast_dex_list_classes,
@@ -613,6 +623,100 @@ def get_all_tools() -> list[Tool]:
             }
         ),
         
+        # ===== ADB工具 =====
+        Tool(
+            name="adb_list_devices",
+            description="列出所有连接的Android设备",
+            inputSchema={
+                "type": "object",
+                "properties": {}
+            }
+        ),
+        Tool(
+            name="adb_install",
+            description="安装APK到设备",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "apk_path": {"type": "string", "description": "APK文件路径"},
+                    "device_id": {"type": "string", "description": "设备ID（可选，如果只有一个设备）"},
+                    "replace": {"type": "boolean", "description": "是否替换已安装的应用"},
+                    "grant_permissions": {"type": "boolean", "description": "是否自动授予权限"}
+                },
+                "required": ["apk_path"]
+            }
+        ),
+        Tool(
+            name="adb_uninstall",
+            description="卸载应用",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "package_name": {"type": "string", "description": "包名"},
+                    "device_id": {"type": "string", "description": "设备ID"}
+                },
+                "required": ["package_name"]
+            }
+        ),
+        Tool(
+            name="adb_logcat",
+            description="获取设备日志",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "device_id": {"type": "string", "description": "设备ID"},
+                    "filter_tag": {"type": "string", "description": "过滤标签"},
+                    "lines": {"type": "integer", "description": "行数（默认100）"},
+                    "clear": {"type": "boolean", "description": "是否先清空日志"}
+                }
+            }
+        ),
+        Tool(
+            name="adb_screenshot",
+            description="截取设备屏幕",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "output_path": {"type": "string", "description": "输出路径"},
+                    "device_id": {"type": "string", "description": "设备ID"}
+                },
+                "required": ["output_path"]
+            }
+        ),
+        Tool(
+            name="adb_device_info",
+            description="获取设备详细信息",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "device_id": {"type": "string", "description": "设备ID"}
+                }
+            }
+        ),
+        Tool(
+            name="adb_list_packages",
+            description="列出设备已安装的应用包名",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "device_id": {"type": "string", "description": "设备ID"},
+                    "filter_text": {"type": "string", "description": "过滤文本"}
+                }
+            }
+        ),
+        Tool(
+            name="adb_clear_data",
+            description="清除应用数据",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "package_name": {"type": "string", "description": "包名"},
+                    "device_id": {"type": "string", "description": "设备ID"}
+                },
+                "required": ["package_name"]
+            }
+        ),
+        
         # ===== 系统工具 =====
         Tool(
             name="get_workspace",
@@ -890,6 +994,46 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 return [TextContent(type="text", text=f"```java\n// 反混淆后:\n{java}\n```")]
         elif name == "fast_dex_decompile_package":
             result = fast_dex_decompile_package(arguments["pattern"])
+        
+        # ADB工具
+        elif name == "adb_list_devices":
+            result = list_devices()
+        elif name == "adb_install":
+            result = install_apk(
+                apk_path=arguments["apk_path"],
+                device_id=arguments.get("device_id"),
+                replace=arguments.get("replace", True),
+                grant_permissions=arguments.get("grant_permissions", True)
+            )
+        elif name == "adb_uninstall":
+            result = uninstall_app(
+                package_name=arguments["package_name"],
+                device_id=arguments.get("device_id")
+            )
+        elif name == "adb_logcat":
+            result = get_logcat(
+                device_id=arguments.get("device_id"),
+                filter_tag=arguments.get("filter_tag"),
+                lines=arguments.get("lines", 100),
+                clear=arguments.get("clear", False)
+            )
+        elif name == "adb_screenshot":
+            result = take_screenshot(
+                output_path=arguments["output_path"],
+                device_id=arguments.get("device_id")
+            )
+        elif name == "adb_device_info":
+            result = get_device_info(device_id=arguments.get("device_id"))
+        elif name == "adb_list_packages":
+            result = list_installed_packages(
+                device_id=arguments.get("device_id"),
+                filter_text=arguments.get("filter_text")
+            )
+        elif name == "adb_clear_data":
+            result = clear_app_data(
+                package_name=arguments["package_name"],
+                device_id=arguments.get("device_id")
+            )
         
         # 系统
         elif name == "get_workspace":
