@@ -116,6 +116,22 @@ pip install -e .
 | `adb_list_packages` | 列出已安装的应用 |
 | `adb_clear_data` | 清除应用数据 |
 
+### 资源编辑工具
+
+| 工具 | 说明 |
+|------|------|
+| `res_read_strings` | **读取 strings.xml** |
+| `res_modify_string` | **修改单个字符串** |
+| `res_batch_modify_strings` | 批量修改字符串 |
+| `res_read_colors` | 读取 colors.xml |
+| `res_modify_color` | 修改颜色值 |
+| `res_search` | **搜索资源内容** |
+| `res_list_files` | 列出资源文件 |
+| `res_read_xml` | 读取任意 XML 资源 |
+| `res_modify_xml` | 修改任意 XML 资源 |
+| `res_add_string` | 添加新字符串 |
+| `res_delete_string` | 删除字符串 |
+
 ### 搜索工具
 
 | 工具 | 说明 |

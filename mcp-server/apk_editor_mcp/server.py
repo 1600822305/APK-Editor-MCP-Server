@@ -56,6 +56,19 @@ from .adb_utils import (
     list_installed_packages,
     clear_app_data
 )
+from .resource_utils import (
+    read_strings_xml,
+    modify_string,
+    batch_modify_strings,
+    read_colors_xml,
+    modify_color,
+    search_in_resources,
+    list_resource_files,
+    read_xml_resource,
+    modify_xml_resource,
+    add_string,
+    delete_string
+)
 from .fast_dex import (
     fast_dex_open,
     fast_dex_list_classes,
@@ -717,6 +730,147 @@ def get_all_tools() -> list[Tool]:
             }
         ),
         
+        # ===== 资源编辑工具 =====
+        Tool(
+            name="res_read_strings",
+            description="读取strings.xml中的所有字符串",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "已解码的APK项目路径"},
+                    "language": {"type": "string", "description": "语言代码（如zh-rCN, en），空为默认"}
+                },
+                "required": ["project_path"]
+            }
+        ),
+        Tool(
+            name="res_modify_string",
+            description="修改strings.xml中的字符串",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"},
+                    "string_name": {"type": "string", "description": "字符串名称"},
+                    "new_value": {"type": "string", "description": "新值"},
+                    "language": {"type": "string", "description": "语言代码"}
+                },
+                "required": ["project_path", "string_name", "new_value"]
+            }
+        ),
+        Tool(
+            name="res_batch_modify_strings",
+            description="批量修改strings.xml中的多个字符串",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"},
+                    "modifications": {"type": "object", "description": "修改映射 {name: value, ...}"},
+                    "language": {"type": "string", "description": "语言代码"}
+                },
+                "required": ["project_path", "modifications"]
+            }
+        ),
+        Tool(
+            name="res_read_colors",
+            description="读取colors.xml中的所有颜色",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"}
+                },
+                "required": ["project_path"]
+            }
+        ),
+        Tool(
+            name="res_modify_color",
+            description="修改colors.xml中的颜色",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"},
+                    "color_name": {"type": "string", "description": "颜色名称"},
+                    "new_value": {"type": "string", "description": "新颜色值（如 #FF0000）"}
+                },
+                "required": ["project_path", "color_name", "new_value"]
+            }
+        ),
+        Tool(
+            name="res_search",
+            description="在资源文件中搜索文本",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"},
+                    "search_text": {"type": "string", "description": "搜索文本"},
+                    "resource_types": {"type": "array", "description": "资源类型 [string, color, dimen, style]", "items": {"type": "string"}}
+                },
+                "required": ["project_path", "search_text"]
+            }
+        ),
+        Tool(
+            name="res_list_files",
+            description="列出所有资源文件",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"}
+                },
+                "required": ["project_path"]
+            }
+        ),
+        Tool(
+            name="res_read_xml",
+            description="读取任意XML资源文件内容",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"},
+                    "resource_path": {"type": "string", "description": "资源相对路径（如 values/strings.xml）"}
+                },
+                "required": ["project_path", "resource_path"]
+            }
+        ),
+        Tool(
+            name="res_modify_xml",
+            description="修改任意XML资源文件",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"},
+                    "resource_path": {"type": "string", "description": "资源相对路径"},
+                    "new_content": {"type": "string", "description": "新内容"}
+                },
+                "required": ["project_path", "resource_path", "new_content"]
+            }
+        ),
+        Tool(
+            name="res_add_string",
+            description="添加新字符串到strings.xml",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"},
+                    "string_name": {"type": "string", "description": "字符串名称"},
+                    "string_value": {"type": "string", "description": "字符串值"},
+                    "language": {"type": "string", "description": "语言代码"}
+                },
+                "required": ["project_path", "string_name", "string_value"]
+            }
+        ),
+        Tool(
+            name="res_delete_string",
+            description="从strings.xml删除字符串",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {"type": "string", "description": "项目路径"},
+                    "string_name": {"type": "string", "description": "字符串名称"},
+                    "language": {"type": "string", "description": "语言代码"}
+                },
+                "required": ["project_path", "string_name"]
+            }
+        ),
+        
         # ===== 系统工具 =====
         Tool(
             name="get_workspace",
@@ -1033,6 +1187,68 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             result = clear_app_data(
                 package_name=arguments["package_name"],
                 device_id=arguments.get("device_id")
+            )
+        
+        # 资源编辑
+        elif name == "res_read_strings":
+            result = read_strings_xml(
+                project_path=arguments["project_path"],
+                language=arguments.get("language", "")
+            )
+        elif name == "res_modify_string":
+            result = modify_string(
+                project_path=arguments["project_path"],
+                string_name=arguments["string_name"],
+                new_value=arguments["new_value"],
+                language=arguments.get("language", "")
+            )
+        elif name == "res_batch_modify_strings":
+            result = batch_modify_strings(
+                project_path=arguments["project_path"],
+                modifications=arguments["modifications"],
+                language=arguments.get("language", "")
+            )
+        elif name == "res_read_colors":
+            result = read_colors_xml(project_path=arguments["project_path"])
+        elif name == "res_modify_color":
+            result = modify_color(
+                project_path=arguments["project_path"],
+                color_name=arguments["color_name"],
+                new_value=arguments["new_value"]
+            )
+        elif name == "res_search":
+            result = search_in_resources(
+                project_path=arguments["project_path"],
+                search_text=arguments["search_text"],
+                resource_types=arguments.get("resource_types")
+            )
+        elif name == "res_list_files":
+            result = list_resource_files(project_path=arguments["project_path"])
+        elif name == "res_read_xml":
+            result = read_xml_resource(
+                project_path=arguments["project_path"],
+                resource_path=arguments["resource_path"]
+            )
+            if result.get("success") and result.get("content"):
+                return [TextContent(type="text", text=f"```xml\n{result['content']}\n```")]
+        elif name == "res_modify_xml":
+            result = modify_xml_resource(
+                project_path=arguments["project_path"],
+                resource_path=arguments["resource_path"],
+                new_content=arguments["new_content"]
+            )
+        elif name == "res_add_string":
+            result = add_string(
+                project_path=arguments["project_path"],
+                string_name=arguments["string_name"],
+                string_value=arguments["string_value"],
+                language=arguments.get("language", "")
+            )
+        elif name == "res_delete_string":
+            result = delete_string(
+                project_path=arguments["project_path"],
+                string_name=arguments["string_name"],
+                language=arguments.get("language", "")
             )
         
         # 系统
